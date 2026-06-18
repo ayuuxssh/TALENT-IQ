@@ -27,10 +27,6 @@ if(ENV.NODE_ENV==="production")
         res.sendFile(path.join(__dirname,"../frontend","dist","index.html"));
     });
 }
-app.listen((port),(err)=>{
-if(err)
-{
-    console.log(err);
-}
+app.listen((port),()=>{
     console.log(`Application is running in ${port}`);
 })
