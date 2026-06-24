@@ -4,15 +4,24 @@
 
 import express from "express"
 import path from"path";
+import {serve} from "inngest/express"
 import { connectDB } from "./lib/db.js";
 import { ENV } from "./lib/env.js";
-import { start } from "repl";
+import cors from "cors";
+import { inngest,functions } from "./lib/injest.js";
+
 const app = express();
 const port = ENV.PORT;
 
 
 app.use(express.json());
 const __dirname = path.resolve();
+
+// middleware
+app.use(express.json());
+app.use("/api/inngest",serve({client:inngest,functions}))
+
+app.use(cors({origin:ENV.CLIENT_URL,credentials:true}));
 app.get("/",(req,res)=>{
     res.send("Hey Welcome");
 });
