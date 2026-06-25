@@ -4,10 +4,13 @@
 
 import express from "express"
 import path from"path";
+import { clerkMiddleware } from '@clerk/express'
 import {serve} from "inngest/express"
 import { connectDB } from "./lib/db.js";
 import { ENV } from "./lib/env.js";
 import cors from "cors";
+import { protectRoute } from "./middleware/protectRoute.js";
+import chatRoutes from "./routes/chatRoutes.js"
 import { inngest,functions } from "./lib/injest.js";
 
 const app = express();
@@ -22,11 +25,22 @@ app.use(express.json());
 app.use("/api/inngest",serve({client:inngest,functions}))
 
 app.use(cors({origin:ENV.CLIENT_URL,credentials:true}));
+
+app.use(clerkMiddleware());// this adds auth field to request object:req.auth();
+
+app.use("api/chat",chatRoutes);
 app.get("/",(req,res)=>{
     res.send("Hey Welcome");
 });
 app.get("/books",(req,res)=>{
     res.send("Welcome to Books route");
+})
+
+
+//when you pass an array of middleware to express it automatically flattens and executes them sequentially one by one
+
+app.get("/video-calls",protectRoute,(req,res)=>{
+    res.status(200).json({msg:"Video call endpoint"});
 })
 // make ready for production
 if(ENV.NODE_ENV==="production")
