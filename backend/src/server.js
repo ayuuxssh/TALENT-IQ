@@ -12,6 +12,7 @@ import cors from "cors";
 import { protectRoute } from "./middleware/protectRoute.js";
 import chatRoutes from "./routes/chatRoutes.js"
 import { inngest,functions } from "./lib/injest.js";
+import sessionRoutes from "./routes/sessionRoutes.js"
 
 const app = express();
 const port = ENV.PORT;
@@ -29,6 +30,7 @@ app.use(cors({origin:ENV.CLIENT_URL,credentials:true}));
 app.use(clerkMiddleware());// this adds auth field to request object:req.auth();
 
 app.use("api/chat",chatRoutes);
+app.use("api/session",sessionRoutes);
 app.get("/",(req,res)=>{
     res.send("Hey Welcome");
 });
