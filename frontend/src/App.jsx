@@ -1,19 +1,20 @@
 
-import { SignIn, SignInButton, SignOutButton,Show,UserButton } from "@clerk/react";
-
+import { SignIn, SignInButton, SignOutButton,Show,UserButton, useUser } from "@clerk/react";
+import HomePage from "./pages/HomePage.jsx"
+import ProblemsPage from "./pages/ProblemsPage.jsx";
+import { Routes,Route, Navigate } from "react-router";
+import {Toaster} from "react-hot-toast"
 
 function App()
 {
-  return (
-  <>
-  
-  <h1> Welcome to the app</h1>
-  <Show when="signed-out">
-          <SignInButton  mode ="modal"/>
-        </Show>
-        <Show when="signed-in">
-          <UserButton />
-        </Show>
+   const {isSignedIn}=useUser()
+    return (
+      <>
+  <Routes>
+        <Route path="/" element={<HomePage/>}/>
+        <Route path="/problems" element={isSignedIn?<ProblemsPage/>:<Navigate to={"/"}/>}/>
+  </Routes>
+  <Toaster toastOptions={{duration:2000}} />
   </>
   )
 }
