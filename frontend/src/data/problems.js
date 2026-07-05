@@ -65,11 +65,45 @@ class Solution {
         System.out.println(Arrays.toString(twoSum(new int[]{3, 3}, 6))); // Expected: [0, 1]
     }
 }`,
+      cpp: `#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    vector<int> twoSum(vector<int>& nums, int target) {
+        // Write your solution here
+        
+        return {};
+    }
+};
+
+void printVector(const vector<int>& res) {
+    cout << "[";
+    for(size_t i = 0; i < res.size(); ++i) {
+        cout << res[i] << (i == res.size() - 1 ? "" : ",");
+    }
+    cout << "]\\n";
+}
+
+int main() {
+    Solution s;
+    vector<int> n1 = {2, 7, 11, 15};
+    vector<int> n2 = {3, 2, 4};
+    vector<int> n3 = {3, 3};
+    
+    printVector(s.twoSum(n1, 9));  // Expected: [0,1]
+    printVector(s.twoSum(n2, 6));  // Expected: [1,2]
+    printVector(s.twoSum(n3, 6));  // Expected: [0,1]
+    return 0;
+}`,
     },
     expectedOutput: {
       javascript: "[0,1]\n[1,2]\n[0,1]",
       python: "[0, 1]\n[1, 2]\n[0, 1]",
       java: "[0, 1]\n[1, 2]\n[0, 1]",
+      cpp: "[0,1]\n[1,2]\n[0,1]",
     },
   },
 
@@ -137,11 +171,44 @@ class Solution {
         System.out.println(Arrays.toString(test2)); // Expected: [h, a, n, n, a, H]
     }
 }`,
+      cpp: `#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    void reverseString(vector<char>& s) {
+        // Write your solution here
+        
+    }
+};
+
+void printCharVector(const vector<char>& s) {
+    cout << "[";
+    for(size_t i = 0; i < s.size(); ++i) {
+        cout << "\\"" << s[i] << "\\"" << (i == s.size() - 1 ? "" : ",");
+    }
+    cout << "]\\n";
+}
+
+int main() {
+    Solution s;
+    vector<char> test1 = {'h','e','l','l','o'};
+    s.reverseString(test1);
+    printCharVector(test1); // Expected: ["o","l","l","e","h"]
+
+    vector<char> test2 = {'H','a','n','n','a','h'};
+    s.reverseString(test2);
+    printCharVector(test2); // Expected: ["h","a","n","n","a","H"]
+    return 0;
+}`,
     },
     expectedOutput: {
       javascript: '["o","l","l","e","h"]\n["h","a","n","n","a","H"]',
       python: "['o', 'l', 'l', 'e', 'h']\n['h', 'a', 'n', 'n', 'a', 'H']",
       java: "[o, l, l, e, h]\n[h, a, n, n, a, H]",
+      cpp: '["o","l","l","e","h"]\n["h","a","n","n","a","H"]',
     },
   },
 
@@ -204,11 +271,33 @@ print(isPalindrome(" "))  # Expected: True`,
         System.out.println(isPalindrome(" ")); // Expected: true
     }
 }`,
+      cpp: `#include <iostream>
+#include <string>
+
+using namespace std;
+
+class Solution {
+public:
+    bool isPalindrome(string s) {
+        // Write your solution here
+        
+        return false;
+    }
+};
+
+int main() {
+    Solution s;
+    cout << (s.isPalindrome("A man, a plan, a canal: Panama") ? "true" : "false") << "\\n"; // Expected: true
+    cout << (s.isPalindrome("race a car") ? "true" : "false") << "\\n";                   // Expected: false
+    cout << (s.isPalindrome(" ") ? "true" : "false") << "\\n";                            // Expected: true
+    return 0;
+}`,
     },
     expectedOutput: {
       javascript: "true\nfalse\ntrue",
       python: "True\nFalse\nTrue",
       java: "true\nfalse\ntrue",
+      cpp: "true\nfalse\ntrue",
     },
   },
 
@@ -270,11 +359,37 @@ print(maxSubArray([5,4,-1,7,8]))  # Expected: 23`,
         System.out.println(maxSubArray(new int[]{5,4,-1,7,8})); // Expected: 23
     }
 }`,
+      cpp: `#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    int maxSubArray(vector<int>& nums) {
+        // Write your solution here
+        
+        return 0;
+    }
+};
+
+int main() {
+    Solution s;
+    vector<int> n1 = {-2,1,-3,4,-1,2,1,-5,4};
+    vector<int> n2 = {1};
+    vector<int> n3 = {5,4,-1,7,8};
+    
+    cout << s.maxSubArray(n1) << "\\n"; // Expected: 6
+    cout << s.maxSubArray(n2) << "\\n"; // Expected: 1
+    cout << s.maxSubArray(n3) << "\\n"; // Expected: 23
+    return 0;
+}`,
     },
     expectedOutput: {
       javascript: "6\n1\n23",
       python: "6\n1\n23",
       java: "6\n1\n23",
+      cpp: "6\n1\n23",
     },
   },
 
@@ -332,11 +447,35 @@ print(maxArea([1,1]))  # Expected: 1`,
         System.out.println(maxArea(new int[]{1,1})); // Expected: 1
     }
 }`,
+      cpp: `#include <iostream>
+#include <vector>
+
+using namespace std;
+
+class Solution {
+public:
+    int maxArea(vector<int>& height) {
+        // Write your solution here
+        
+        return 0;
+    }
+};
+
+int main() {
+    Solution s;
+    vector<int> h1 = {1,8,6,2,5,4,8,3,7};
+    vector<int> h2 = {1,1};
+    
+    cout << s.maxArea(h1) << "\\n"; // Expected: 49
+    cout << s.maxArea(h2) << "\\n"; // Expected: 1
+    return 0;
+}`,
     },
     expectedOutput: {
       javascript: "49\n1",
       python: "49\n1",
       java: "49\n1",
+      cpp: "49\n1",
     },
   },
 };
@@ -356,5 +495,10 @@ export const LANGUAGE_CONFIG = {
     name: "Java",
     icon: "/java.png",
     monacoLang: "java",
+  },
+  cpp: {
+    name: "C++",
+    icon: "/cpp.jpg",
+    monacoLang: "cpp",
   },
 };

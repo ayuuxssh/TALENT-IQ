@@ -1,12 +1,4 @@
-// Piston API is a service for code execution
-
-const PISTON_API = "https://emkc.org/api/v2/piston";
-
-const LANGUAGE_VERSIONS = {
-  javascript: { language: "javascript", version: "18.15.0" },
-  python: { language: "python", version: "3.10.0" },
-  java: { language: "java", version: "15.0.2" },
-};
+import axios from "axios";
 
 /**
  * @param {string} language - programming language
@@ -15,70 +7,31 @@ const LANGUAGE_VERSIONS = {
  */
 export async function executeCode(language, code) {
   try {
-    const languageConfig = LANGUAGE_VERSIONS[language];
+    const BACKEND_URL = "http://localhost:3000/api/code/execute"; 
 
-    if (!languageConfig) {
-      return {
-        success: false,
-        error: `Unsupported language: ${language}`,
-      };
-    }
-
-    const response = await fetch(`${PISTON_API}/execute`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        language: languageConfig.language,
-        version: languageConfig.version,
-        files: [
-          {
-            name: `main.${getFileExtension(language)}`,
-            content: code,
-          },
-        ],
-      }),
+    // Axios automatically stringifies the body and sets the 'Content-Type': 'application/json' header
+    const response = await axios.post(BACKEND_URL, {
+      language: language,
+      code: code,
     });
 
-    if (!response.ok) {
-      return {
-        success: false,
-        error: `HTTP error! status: ${response.status}`,
-      };
-    }
-
-    const data = await response.json();
-
-    const output = data.run.output || "";
-    const stderr = data.run.stderr || "";
-
-    if (stderr) {
-      return {
-        success: false,
-        output: output,
-        error: stderr,
-      };
-    }
-
-    return {
-      success: true,
-      output: output || "No output",
-    };
+    // Axios automatically parses the JSON response into the 'data' property
+    return response.data;
+    
   } catch (error) {
+    // Axios handles errors differently than fetch. 
+    // If the server responded with a bad status (4xx or 5xx), it's stored in error.response
+    if (error.response) {
+      return {
+        success: false,
+        error: error.response.data.error || `Server responded with status: ${error.response.status}`,
+      };
+    }
+
+    // If the server never responded (network error, CORS, or server is down)
     return {
       success: false,
-      error: `Failed to execute code: ${error.message}`,
+      error: `Failed to reach execution server: ${error.message}`,
     };
   }
-}
-
-function getFileExtension(language) {
-  const extensions = {
-    javascript: "js",
-    python: "py",
-    java: "java",
-  };
-
-  return extensions[language] || "txt";
 }
