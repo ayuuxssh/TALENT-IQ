@@ -7,10 +7,9 @@ import axios from "axios";
  */
 export async function executeCode(language, code) {
   try {
-    const BACKEND_URL = "http://localhost:3000/api/code/execute"; 
 
     // Axios automatically stringifies the body and sets the 'Content-Type': 'application/json' header
-    const response = await axios.post(BACKEND_URL, {
+    const response = await axios.post(`${import.meta.env.VITE_API_UPL}/code/execute`, {
       language: language,
       code: code,
     });
