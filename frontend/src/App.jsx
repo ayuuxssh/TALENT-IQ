@@ -1,5 +1,7 @@
-import { useUser } from "@clerk/react";
+import { useAuth, useUser } from "@clerk/react";
+import { useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router";
+import { setAuthTokenGetter } from "./lib/axios";
 import HomePage from "./pages/HomePage";
 
 import { Toaster } from "react-hot-toast";
@@ -10,6 +12,11 @@ import SessionPage from "./pages/SessionPage";
 
 function App() {
   const { isSignedIn, isLoaded } = useUser();
+  const { getToken } = useAuth();
+
+  useEffect(() => {
+    setAuthTokenGetter(getToken);
+  }, [getToken]);
 
   // this will get rid of the flickering effect
   if (!isLoaded) return null;
