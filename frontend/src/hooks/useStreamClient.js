@@ -4,6 +4,9 @@ import toast from "react-hot-toast";
 import { initializeStreamClient, disconnectStreamClient } from "../lib/stream.js";
 import { sessionApi } from "../api/sessions.js";
 
+const STREAM_REQUEST_TIMEOUT = 10000;
+const STREAM_WATCH_ATTEMPTS = 2;
+
 function useStreamClient(session, loadingSession, isHost, isParticipant) {
   const [streamClient, setStreamClient] = useState(null);
   const [call, setCall] = useState(null);
@@ -58,7 +61,9 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
         setCall(videoCall);
 
         const apiKey = import.meta.env.VITE_STREAM_API_KEY;
-        chatClientInstance = StreamChat.getInstance(apiKey);
+        chatClientInstance = StreamChat.getInstance(apiKey, {
+          timeout: STREAM_REQUEST_TIMEOUT,
+        });
 
         // connect only if not already connected
         if (!chatClientInstance.userID) {
@@ -76,7 +81,24 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
         setChatClient(chatClientInstance);
 
         const chatChannel = chatClientInstance.channel("messaging", session.callId);
-        await chatChannel.watch();
+        let lastWatchError;
+
+        for (let attempt = 1; attempt <= STREAM_WATCH_ATTEMPTS; attempt += 1) {
+          try {
+            await chatChannel.watch();
+            lastWatchError = null;
+            break;
+          } catch (error) {
+            lastWatchError = error;
+            if (attempt < STREAM_WATCH_ATTEMPTS) {
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+            }
+          }
+        }
+
+        if (lastWatchError) {
+          throw lastWatchError;
+        }
 
         if (!isMounted) return;
         setChannel(chatChannel);
