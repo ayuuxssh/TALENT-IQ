@@ -66,7 +66,7 @@ function SessionPage() {
     const sendCodeSnapshot = async () => {
       try {
         await channel.sendEvent({
-          type: "code.updated",
+          type: "code-updated",
           code: codeRef.current,
           language: selectedLanguageRef.current,
         });
@@ -91,10 +91,10 @@ function SessionPage() {
       setCode(incomingCode);
     };
 
-    const requestSubscription = channel.on("code.request", handleCodeRequest);
-    const updateSubscription = channel.on("code.updated", handleCodeUpdate);
+    const requestSubscription = channel.on("code-request", handleCodeRequest);
+    const updateSubscription = channel.on("code-updated", handleCodeUpdate);
 
-    channel.sendEvent({ type: "code.request" }).catch((error) => {
+    channel.sendEvent({ type: "code-request" }).catch((error) => {
       console.error("Failed to request shared code:", error);
     });
 
@@ -117,7 +117,7 @@ function SessionPage() {
     codeBroadcastTimeoutRef.current = setTimeout(() => {
       channel
         .sendEvent({
-          type: "code.updated",
+          type: "code-updated",
           code: nextCode,
           language: nextLanguage,
         })
