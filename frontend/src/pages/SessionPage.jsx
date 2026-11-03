@@ -1,5 +1,5 @@
 import { useUser } from "@clerk/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useEndSession, useJoinSession, useSessionById } from "../hooks/useSessions";
 import { PROBLEMS } from "../data/problems";
@@ -45,6 +45,87 @@ function SessionPage() {
 
   const [selectedLanguage, setSelectedLanguage] = useState("javascript");
   const [code, setCode] = useState(problemData?.starterCode?.[selectedLanguage] || "");
+  const codeRef = useRef(code);
+  const selectedLanguageRef = useRef(selectedLanguage);
+  const codeBroadcastTimeoutRef = useRef(null);
+  const lastRemoteCodeRef = useRef(null);
+
+  useEffect(() => {
+    codeRef.current = code;
+  }, [code]);
+
+  useEffect(() => {
+    selectedLanguageRef.current = selectedLanguage;
+  }, [selectedLanguage]);
+
+  useEffect(() => {
+    if (!channel) return undefined;
+
+    const currentUserId = channel.getClient().userID;
+
+    const sendCodeSnapshot = async () => {
+      try {
+        await channel.sendEvent({
+          type: "code.updated",
+          code: codeRef.current,
+          language: selectedLanguageRef.current,
+        });
+      } catch (error) {
+        console.error("Failed to share code changes:", error);
+      }
+    };
+
+    const handleCodeRequest = ({ user }) => {
+      if (user?.id !== currentUserId) {
+        sendCodeSnapshot();
+      }
+    };
+
+    const handleCodeUpdate = ({ user, code: incomingCode, language }) => {
+      if (user?.id === currentUserId || typeof incomingCode !== "string") return;
+
+      lastRemoteCodeRef.current = incomingCode;
+      selectedLanguageRef.current = language || selectedLanguageRef.current;
+      setSelectedLanguage(selectedLanguageRef.current);
+      codeRef.current = incomingCode;
+      setCode(incomingCode);
+    };
+
+    const requestSubscription = channel.on("code.request", handleCodeRequest);
+    const updateSubscription = channel.on("code.updated", handleCodeUpdate);
+
+    channel.sendEvent({ type: "code.request" }).catch((error) => {
+      console.error("Failed to request shared code:", error);
+    });
+
+    return () => {
+      requestSubscription.unsubscribe();
+      updateSubscription.unsubscribe();
+      if (codeBroadcastTimeoutRef.current) {
+        clearTimeout(codeBroadcastTimeoutRef.current);
+      }
+    };
+  }, [channel]);
+
+  const broadcastCodeChange = (nextCode, nextLanguage = selectedLanguageRef.current) => {
+    if (!channel) return;
+
+    if (codeBroadcastTimeoutRef.current) {
+      clearTimeout(codeBroadcastTimeoutRef.current);
+    }
+
+    codeBroadcastTimeoutRef.current = setTimeout(() => {
+      channel
+        .sendEvent({
+          type: "code.updated",
+          code: nextCode,
+          language: nextLanguage,
+        })
+        .catch((error) => {
+          console.error("Failed to share code changes:", error);
+        });
+    }, 100);
+  };
 
   // auto-join session if user is not already a participant and not the host
   useEffect(() => {
@@ -65,17 +146,22 @@ function SessionPage() {
 
   // update code when problem loads or changes
   useEffect(() => {
-    if (problemData?.starterCode?.[selectedLanguage]) {
-      setCode(problemData.starterCode[selectedLanguage]);
+    const starterCode = problemData?.starterCode?.[selectedLanguageRef.current];
+    if (starterCode) {
+      codeRef.current = starterCode;
+      setCode(starterCode);
     }
-  }, [problemData, selectedLanguage]);
+  }, [problemData]);
 
   const handleLanguageChange = (e) => {
     const newLang = e.target.value;
     setSelectedLanguage(newLang);
+    selectedLanguageRef.current = newLang;
     // use problem-specific starter code
     const starterCode = problemData?.starterCode?.[newLang] || "";
     setCode(starterCode);
+    codeRef.current = starterCode;
+    broadcastCodeChange(starterCode, newLang);
     setOutput(null);
   };
 
@@ -237,7 +323,17 @@ function SessionPage() {
                       code={code}
                       isRunning={isRunning}
                       onLanguageChange={handleLanguageChange}
-                      onCodeChange={(value) => setCode(value)}
+                      onCodeChange={(value) => {
+                        const nextCode = value || "";
+                        if (nextCode === lastRemoteCodeRef.current) {
+                          lastRemoteCodeRef.current = null;
+                          return;
+                        }
+
+                        codeRef.current = nextCode;
+                        setCode(nextCode);
+                        broadcastCodeChange(nextCode);
+                      }}
                       onRunCode={handleRunCode}
                     />
                   </Panel>
