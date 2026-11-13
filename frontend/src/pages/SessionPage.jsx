@@ -46,13 +46,19 @@ function SessionPage() {
   const [selectedLanguage, setSelectedLanguage] = useState("javascript");
   const [code, setCode] = useState(problemData?.starterCode?.[selectedLanguage] || "");
   const codeRef = useRef(code);
+  const outputRef = useRef(output);
   const selectedLanguageRef = useRef(selectedLanguage);
   const codeBroadcastTimeoutRef = useRef(null);
   const lastRemoteCodeRef = useRef(null);
+  const codeVersionRef = useRef(0);
 
   useEffect(() => {
     codeRef.current = code;
   }, [code]);
+
+  useEffect(() => {
+    outputRef.current = output;
+  }, [output]);
 
   useEffect(() => {
     selectedLanguageRef.current = selectedLanguage;
@@ -69,30 +75,63 @@ function SessionPage() {
           type: "code-updated",
           code: codeRef.current,
           language: selectedLanguageRef.current,
+          version: codeVersionRef.current,
         });
       } catch (error) {
         console.error("Failed to share code changes:", error);
       }
     };
 
-    const handleCodeRequest = ({ user }) => {
-      if (user?.id !== currentUserId) {
-        sendCodeSnapshot();
+    const sendOutputSnapshot = async () => {
+      try {
+        await channel.sendEvent({
+          type: "output-updated",
+          output: outputRef.current,
+        });
+      } catch (error) {
+        console.error("Failed to share code output:", error);
       }
     };
 
-    const handleCodeUpdate = ({ user, code: incomingCode, language }) => {
-      if (user?.id === currentUserId || typeof incomingCode !== "string") return;
+    const handleCodeRequest = ({ user, user_id: userId }) => {
+      if ((user?.id || userId) !== currentUserId) {
+        sendCodeSnapshot();
+        sendOutputSnapshot();
+      }
+    };
+
+    const handleCodeUpdate = (event) => {
+      const eventData = event.payload || event;
+      const senderId = event.user?.id || event.user_id;
+      const incomingCode = eventData.code;
+      const incomingLanguage = eventData.language;
+      const incomingVersion =
+        typeof eventData.version === "number" ? eventData.version : 0;
+
+      if (senderId === currentUserId || typeof incomingCode !== "string") return;
+      if (incomingVersion < codeVersionRef.current) return;
 
       lastRemoteCodeRef.current = incomingCode;
-      selectedLanguageRef.current = language || selectedLanguageRef.current;
+      codeVersionRef.current = incomingVersion;
+      selectedLanguageRef.current = incomingLanguage || selectedLanguageRef.current;
       setSelectedLanguage(selectedLanguageRef.current);
       codeRef.current = incomingCode;
       setCode(incomingCode);
     };
 
+    const handleOutputUpdate = (event) => {
+      const eventData = event.payload || event;
+      const senderId = event.user?.id || event.user_id;
+
+      if (senderId === currentUserId || !("output" in eventData)) return;
+
+      outputRef.current = eventData.output;
+      setOutput(eventData.output);
+    };
+
     const requestSubscription = channel.on("code-request", handleCodeRequest);
-    const updateSubscription = channel.on("code-updated", handleCodeUpdate);
+    const codeUpdateSubscription = channel.on("code-updated", handleCodeUpdate);
+    const outputUpdateSubscription = channel.on("output-updated", handleOutputUpdate);
 
     channel.sendEvent({ type: "code-request" }).catch((error) => {
       console.error("Failed to request shared code:", error);
@@ -100,7 +139,8 @@ function SessionPage() {
 
     return () => {
       requestSubscription.unsubscribe();
-      updateSubscription.unsubscribe();
+      codeUpdateSubscription.unsubscribe();
+      outputUpdateSubscription.unsubscribe();
       if (codeBroadcastTimeoutRef.current) {
         clearTimeout(codeBroadcastTimeoutRef.current);
       }
@@ -114,12 +154,16 @@ function SessionPage() {
       clearTimeout(codeBroadcastTimeoutRef.current);
     }
 
+    const nextVersion = Math.max(Date.now(), codeVersionRef.current + 1);
+    codeVersionRef.current = nextVersion;
+
     codeBroadcastTimeoutRef.current = setTimeout(() => {
       channel
         .sendEvent({
           type: "code-updated",
           code: nextCode,
           language: nextLanguage,
+          version: nextVersion,
         })
         .catch((error) => {
           console.error("Failed to share code changes:", error);
@@ -162,6 +206,7 @@ function SessionPage() {
     setCode(starterCode);
     codeRef.current = starterCode;
     broadcastCodeChange(starterCode, newLang);
+    outputRef.current = null;
     setOutput(null);
   };
 
@@ -171,6 +216,15 @@ function SessionPage() {
 
     const result = await executeCode(selectedLanguage, code);
     setOutput(result);
+    outputRef.current = result;
+    if (channel) {
+      channel.sendEvent({
+        type: "output-updated",
+        output: result,
+      }).catch((error) => {
+        console.error("Failed to share code output:", error);
+      });
+    }
     setIsRunning(false);
   };
 
